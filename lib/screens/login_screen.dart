@@ -67,7 +67,6 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  // ✅ PERBAIKAN: _login METHOD SEDERHANA
   void _login(WidgetRef ref) async {
     if (_formKey.currentState!.validate()) {
       ref.read(loadingProvider.notifier).state = true;
@@ -81,17 +80,20 @@ class _LoginScreenState extends State<LoginScreen>
 
         print('✅ Login successful: ${response.user?.email}');
 
-        // Navigation handled by auth state in app.dart
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          );
+        }
       } catch (e) {
         String errorMessage = 'Login gagal: $e';
 
-        // ✅ HANDLE COMMON ERRORS
         if (e.toString().contains('Invalid login credentials')) {
           errorMessage = 'Email atau password salah.';
-        } else if (e.toString().contains('email_not_confirmed')) {
-          errorMessage = 'Email belum dikonfirmasi. Silakan cek email Anda.';
-        } else if (e.toString().contains('Email not confirmed')) {
-          errorMessage = 'Email belum dikonfirmasi. Silakan cek email Anda.';
+        } else if (e.toString().contains('email_not_confirmed') ||
+            e.toString().contains('Email not confirmed')) {
+          errorMessage = 'Email belum dikonfirmasi.';
         }
 
         ScaffoldMessenger.of(context).showSnackBar(

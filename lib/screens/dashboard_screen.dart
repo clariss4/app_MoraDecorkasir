@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../services/database_service.dart';
+import 'tools_dashboard/customer_list_screen.dart';
+import 'tools_dashboard/product_stock_screen.dart';
+import 'tools_dashboard/recent_transaction_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -30,12 +33,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final databaseService = DatabaseService();
       final stats = await databaseService.getDashboardStats();
       setState(() {
-        _dashboardStats = stats;
+        _dashboardStats = {
+          'recentTransactions': 90, // Data dummy
+          'totalCustomers': 150, // Data dummy
+          'totalProducts': 4350, // Data dummy
+        };
         _isLoading = false;
       });
     } catch (e) {
       print('Error loading dashboard data: $e');
       setState(() {
+        _dashboardStats = {
+          'recentTransactions': 90,
+          'totalCustomers': 150,
+          'totalProducts': 4350,
+        };
         _isLoading = false;
       });
     }
@@ -79,9 +91,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _buildToolsSection(),
-                  const SizedBox(height: 24),
-                  _buildRevenueSection(),
+                  _buildRecentTransactionsTool(), // Card biru di atas
+                  const SizedBox(height: 24), // Jarak lebih besar ke card putih
+                  _buildToolsSection(), // Total Customer & Product Stock (putih)
+                  const SizedBox(height: 24), // Jarak lebih besar ke Revenue
+                  _buildRevenueSection(), // Revenue (putih)
                 ],
               ),
             ),
@@ -190,181 +204,208 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildToolsSection() {
-    return Column(
+    return Row(
       children: [
-        _buildRecentTransactionsTool(),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(child: _buildTotalCustomerTool()),
-            const SizedBox(width: 12),
-            Expanded(child: _buildTotalProductStockTool()),
-          ],
-        ),
+        Expanded(child: _buildTotalCustomerTool()),
+        const SizedBox(width: 12),
+        Expanded(child: _buildTotalProductStockTool()),
       ],
     );
   }
 
   Widget _buildRecentTransactionsTool() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE3F2FD),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1976D2).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.receipt_long,
-              color: Color(0xFF1976D2),
-              size: 32,
-            ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => RecentTransactionsScreen()),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        height: 140,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFb2d6f7), // Biru muda
+              Color(0xFFd4eaff), // Biru tua
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${_dashboardStats['recentTransactions']}',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1976D2),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${_dashboardStats['recentTransactions']}',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF7092ba),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'List of recent transactions',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF1976D2).withOpacity(0.8),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'List of recent transactions',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF7092ba),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const Icon(
-            Icons.arrow_forward_ios,
-            color: Color(0xFF1976D2),
-            size: 20,
-          ),
-        ],
+            const SizedBox(width: 10),
+            Container(
+              child: const Icon(
+                Icons.receipt_long_outlined,
+                color: Color(0xFF7092ba),
+                size: 60,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTotalCustomerTool() {
-    return Container(
-      height: 140,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8F5E8),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF2E7D32).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => CustomerListScreen()),
+        );
+      },
+      child: Container(
+        height: 160,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 4),
             ),
-            child: const Icon(Icons.people, color: Color(0xFF2E7D32), size: 24),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${_dashboardStats['totalCustomers']}',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2E7D32),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_dashboardStats['totalCustomers']}',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2e2e2e),
+                  ),
+                ),
+                const Text(
+                  'Total Customer',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF2e2e2e),
+                  ),
+                ),
+              ],
+            ),
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                child: const Icon(
+                  Icons.people,
+                  color: Color(0xFF2e2e2e),
+                  size: 40,
                 ),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'Total Customer',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF2E7D32),
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTotalProductStockTool() {
-    return Container(
-      height: 140,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E0),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEF6C00).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ProductStockScreen()),
+        );
+      },
+      child: Container(
+        height: 160,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 4),
             ),
-            child: const Icon(
-              Icons.inventory_2,
-              color: Color(0xFFEF6C00),
-              size: 24,
+          ],
+        ),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_dashboardStats['totalProducts']}',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2e2e2e),
+                  ),
+                ),
+                const Text(
+                  'Total Product Stock',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF2e2e2e),
+                  ),
+                ),
+              ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${_dashboardStats['totalProducts']}',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFEF6C00),
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                child: const Icon(
+                  Icons.inventory,
+                  color: Color(0xFF2e2e2e),
+                  size: 40,
                 ),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'Total Product Stock',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFFEF6C00),
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -378,7 +419,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
           BoxShadow(
-            color: Colors.black12,
+            color: Color.fromARGB(255, 213, 211, 211),
             blurRadius: 10,
             offset: Offset(0, 4),
           ),
@@ -402,23 +443,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFF2E2E2E),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildFilterButton('Monthly', 0),
-                    Container(
-                      width: 2,
-                      height: 20,
-                      color: const Color(0xFF2E2E2E),
-                    ),
                     _buildFilterButton('Weekly', 1),
-                    Container(
-                      width: 2,
-                      height: 20,
-                      color: const Color(0xFF2E2E2E),
-                    ),
                     _buildFilterButton('Today', 2),
                   ],
                 ),
@@ -450,13 +481,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         decoration: BoxDecoration(
           color: isActive ? Colors.white : const Color(0xFF2E2E2E),
           borderRadius: _getBorderRadius(index),
+          border: Border.all(color: Color(0xFFd9d9d9)),
         ),
         child: Text(
           text,
           style: TextStyle(
             color: isActive ? const Color(0xFF2E2E2E) : Colors.white,
             fontWeight: FontWeight.w500,
-            fontSize: 10,
+            fontSize: 12,
           ),
         ),
       ),
@@ -467,19 +499,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     switch (index) {
       case 0:
         return const BorderRadius.only(
-          topLeft: Radius.circular(6),
-          bottomLeft: Radius.circular(6),
-          topRight: Radius.zero,
-          bottomRight: Radius.zero,
+          topLeft: Radius.circular(5),
+          bottomLeft: Radius.circular(5),
         );
       case 1:
         return BorderRadius.zero;
       case 2:
         return const BorderRadius.only(
-          topLeft: Radius.zero,
-          bottomLeft: Radius.zero,
-          topRight: Radius.circular(6),
-          bottomRight: Radius.circular(6),
+          topRight: Radius.circular(5),
+          bottomRight: Radius.circular(5),
         );
       default:
         return BorderRadius.zero;
