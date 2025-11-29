@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pos_kasir/screens/product_screen.dart';
+import 'package:pos_kasir/screens/splash_screen.dart';
 import '../providers/auth_provider.dart';
 import '../services/database_service.dart';
-import 'tools_dashboard/customer_list_screen.dart';
-import 'tools_dashboard/product_stock_screen.dart';
-import 'tools_dashboard/recent_transaction_screen.dart';
+import '../utils/user_helper.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -22,6 +22,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   };
   bool _isLoading = true;
 
+  String currentScreen = 'Dashboard'; // default: dashboard
+
   @override
   void initState() {
     super.initState();
@@ -34,9 +36,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final stats = await databaseService.getDashboardStats();
       setState(() {
         _dashboardStats = {
-          'recentTransactions': 90, // Data dummy
-          'totalCustomers': 150, // Data dummy
-          'totalProducts': 4350, // Data dummy
+          'recentTransactions': 90,
+          'totalCustomers': 150,
+          'totalProducts': 4350,
         };
         _isLoading = false;
       });
@@ -57,6 +59,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final authService = ref.read(authServiceProvider);
       await authService.signOut();
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => SplashScreen()),
+        (route) => false,
+      );
     } catch (e) {
       print('Logout error: $e');
     }
@@ -91,11 +99,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _buildRecentTransactionsTool(), // Card biru di atas
-                  const SizedBox(height: 24), // Jarak lebih besar ke card putih
-                  _buildToolsSection(), // Total Customer & Product Stock (putih)
-                  const SizedBox(height: 24), // Jarak lebih besar ke Revenue
-                  _buildRevenueSection(), // Revenue (putih)
+                  _buildRecentTransactionsTool(),
+                  const SizedBox(height: 24),
+                  _buildToolsSection(),
+                  const SizedBox(height: 24),
+                  _buildRevenueSection(),
                 ],
               ),
             ),
@@ -107,99 +115,385 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final currentUser = authService.currentUser;
 
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
+      child: FutureBuilder<Map<String, dynamic>?>(
+        future: _getUserProfile(currentUser?.id),
+        builder: (context, snapshot) {
+          final userProfile = snapshot.data;
+          final userRole =
+              userProfile?['role'] ?? getUserRoleFromEmail(currentUser?.email);
+
+          return ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              // Header Profil dengan layout baru
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(color: Color(0xFF6F90B9)),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Foto Profil di kiri
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      child: userProfile?['image_url'] != null
+                          ? ClipOval(
+                              child: Image.network(
+                                userProfile!['image_url'],
+                                width: 58,
+                                height: 58,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(
+                                    Icons.person,
+                                    color: const Color(0xFF6F90B9),
+                                    size: 30,
+                                  );
+                                },
+                              ),
+                            )
+                          : Icon(
+                              Icons.person,
+                              color: const Color(0xFF6F90B9),
+                              size: 30,
+                            ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Info pengguna di kanan (vertikal)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Nama Pengguna
+                          Text(
+                            userProfile?['nama'] ??
+                                currentUser?.email?.split('@').first ??
+                                'User',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          // Email
+                          Text(
+                            userProfile?['email'] ??
+                                currentUser?.email ??
+                                'user@email.com',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          // ID
+                          Text(
+                            'ID: ${currentUser?.id?.substring(0, 8) ?? 'Unknown'}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          // Status Pengguna
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              userRole.toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // === Menu Items Baru (DIPERBAIKI) ===
+              _buildDrawerItem(
+                icon: Icons.dashboard,
+                title: 'Dashboard',
+                onTap: () => Navigator.pop(context),
+                isActive: currentScreen == 'Dashboard',
+              ),
+              _buildDrawerItem(
+                icon: Icons.inventory_2,
+                title: 'Products',
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    currentScreen = 'Products'; // ✅ dikoreksi
+                  });
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProductScreen(),
+                    ),
+                  );
+                },
+                isActive: currentScreen == 'Products',
+              ),
+              _buildDrawerItem(
+                icon: Icons.people,
+                title: 'Customer',
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    currentScreen = 'Customer';
+                  });
+                  // TODO: Ganti dengan CustomerScreen() setelah dibuat
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Scaffold(
+                        appBar: AppBar(title: const Text('Customer')),
+                        body: const Center(child: Text('Halaman Customer')),
+                      ),
+                    ),
+                  );
+                },
+                isActive: currentScreen == 'Customer',
+              ),
+              _buildDrawerItem(
+                icon: Icons.bar_chart,
+                title: 'Sales Report',
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    currentScreen = 'Sales Report';
+                  });
+                  // TODO: Ganti dengan SalesReportScreen()
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Scaffold(
+                        appBar: AppBar(title: const Text('Sales Report')),
+                        body: const Center(child: Text('Halaman Sales Report')),
+                      ),
+                    ),
+                  );
+                },
+                isActive: currentScreen == 'Sales Report',
+              ),
+              _buildDrawerItem(
+                icon: Icons.warehouse,
+                title: 'Stock',
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    currentScreen = 'Stock';
+                  });
+                  // TODO: Ganti dengan StockScreen()
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Scaffold(
+                        appBar: AppBar(title: const Text('Stock')),
+                        body: const Center(child: Text('Halaman Stock')),
+                      ),
+                    ),
+                  );
+                },
+                isActive: currentScreen == 'Stock',
+              ),
+              _buildDrawerItem(
+                icon: Icons.point_of_sale,
+                title: 'Cashier',
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    currentScreen = 'Cashier';
+                  });
+                  // TODO: Ganti dengan CashierScreen()
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Scaffold(
+                        appBar: AppBar(title: const Text('Cashier')),
+                        body: const Center(child: Text('Halaman Cashier')),
+                      ),
+                    ),
+                  );
+                },
+                isActive: currentScreen == 'Cashier',
+              ),
+              const SizedBox(height: 16),
+              _buildDrawerItem(
+                icon: Icons.settings,
+                title: 'Settings',
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    currentScreen = 'Settings';
+                  });
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Scaffold(
+                        appBar: AppBar(title: const Text('Settings')),
+                        body: const Center(child: Text('Halaman Settings')),
+                      ),
+                    ),
+                  );
+                },
+                isActive: currentScreen == 'Settings',
+              ),
+              _buildDrawerItem(
+                icon: Icons.logout,
+                title: 'Logout',
+                onTap: () {
+                  _logout(ref);
+                  Navigator.pop(context);
+                },
+                isLogout: true,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  // Method untuk mengambil data profil dari Supabase
+  Future<Map<String, dynamic>?> _getUserProfile(String? userId) async {
+    if (userId == null) return null;
+
+    try {
+      final databaseService = DatabaseService();
+      final profile = await databaseService.getUserProfile(userId);
+      return profile;
+    } catch (e) {
+      print('Error getting user profile: $e');
+      return null;
+    }
+  }
+
+  // ✅ DIPERBARUI: _buildDrawerItem dengan desain baru
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isLogout = false,
+    bool isActive = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap, // ✅ langsung lempar ke handler luar
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isLogout
+              ? const Color(0xFF6F90B9)
+              : isActive
+              ? const Color(0xFFE3F2FD)
+              : Colors.white,
+          border: Border(
+            bottom: BorderSide(
+              color: isLogout ? Colors.transparent : Colors.grey.shade200,
+              width: 1.0,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isLogout
+                  ? Colors.white
+                  : isActive
+                  ? const Color(0xFF1976D2)
+                  : const Color(0xFF6F90B9),
+              size: 24,
+            ),
+            const SizedBox(width: 16),
+            Text(
+              title,
+              style: TextStyle(
+                color: isLogout
+                    ? Colors.white
+                    : isActive
+                    ? const Color(0xFF1976D2)
+                    : const Color(0xFF2E2E2E),
+                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                fontSize: 16,
+              ),
+            ),
+            if (isLogout) const Spacer(),
+            if (isLogout) Icon(Icons.logout, color: Colors.white, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+  // ========================
+  // Bagian BODY tetap sama
+  // ========================
+
+  Widget _buildRecentTransactionsTool() {
+    return Container(
+      width: double.infinity,
+      height: 140,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFb2d6f7), Color(0xFFd4eaff)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Row(
         children: [
-          DrawerHeader(
-            decoration: const BoxDecoration(color: Color(0xFF6F90B9)),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.person,
-                    color: const Color(0xFF6F90B9),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Admin Store',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
                 Text(
-                  currentUser?.email ?? 'admin@store.com',
+                  '${_dashboardStats['recentTransactions']}',
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF7092ba),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'List of recent transactions',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 12,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF7092ba),
                   ),
                 ),
               ],
             ),
           ),
-          _buildDrawerItem(
-            icon: Icons.dashboard,
-            title: 'Dashboard',
-            onTap: () => Navigator.pop(context),
-          ),
-          _buildDrawerItem(
-            icon: Icons.inventory_2,
-            title: 'Products',
-            onTap: () {},
-          ),
-          _buildDrawerItem(icon: Icons.people, title: 'Customer', onTap: () {}),
-          _buildDrawerItem(
-            icon: Icons.bar_chart,
-            title: 'Sales Report',
-            onTap: () {},
-          ),
-          _buildDrawerItem(icon: Icons.warehouse, title: 'Stock', onTap: () {}),
-          _buildDrawerItem(
-            icon: Icons.point_of_sale,
-            title: 'Cashier',
-            onTap: () {},
-          ),
-          const Divider(),
-          _buildDrawerItem(
-            icon: Icons.settings,
-            title: 'Settings',
-            onTap: () {},
-          ),
-          _buildDrawerItem(
-            icon: Icons.logout,
-            title: 'Logout',
-            onTap: () {
-              _logout(ref);
-              Navigator.pop(context);
-            },
+          const SizedBox(width: 10),
+          Container(
+            child: const Icon(
+              Icons.receipt_long_outlined,
+              color: Color(0xFF7092ba),
+              size: 60,
+            ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: const Color(0xFF6F90B9)),
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: Color(0xFF2E2E2E),
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      onTap: onTap,
     );
   }
 
@@ -213,199 +507,104 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildRecentTransactionsTool() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => RecentTransactionsScreen()),
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        height: 140,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFb2d6f7), // Biru muda
-              Color(0xFFd4eaff), // Biru tua
+  Widget _buildTotalCustomerTool() {
+    return Container(
+      height: 160,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${_dashboardStats['totalCustomers']}',
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2e2e2e),
+                ),
+              ),
+              const Text(
+                'Total Customer',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF2e2e2e),
+                ),
+              ),
             ],
           ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '${_dashboardStats['recentTransactions']}',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF7092ba),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'List of recent transactions',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF7092ba),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            Container(
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(12),
               child: const Icon(
-                Icons.receipt_long_outlined,
-                color: Color(0xFF7092ba),
-                size: 60,
+                Icons.people,
+                color: Color(0xFF2e2e2e),
+                size: 40,
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTotalCustomerTool() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => CustomerListScreen()),
-        );
-      },
-      child: Container(
-        height: 160,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${_dashboardStats['totalCustomers']}',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2e2e2e),
-                  ),
-                ),
-                const Text(
-                  'Total Customer',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF2e2e2e),
-                  ),
-                ),
-              ],
-            ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                child: const Icon(
-                  Icons.people,
-                  color: Color(0xFF2e2e2e),
-                  size: 40,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildTotalProductStockTool() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ProductStockScreen()),
-        );
-      },
-      child: Container(
-        height: 160,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${_dashboardStats['totalProducts']}',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2e2e2e),
-                  ),
-                ),
-                const Text(
-                  'Total Product Stock',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF2e2e2e),
-                  ),
-                ),
-              ],
-            ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                child: const Icon(
-                  Icons.inventory,
+    return Container(
+      height: 160,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${_dashboardStats['totalProducts']}',
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
                   color: Color(0xFF2e2e2e),
-                  size: 40,
                 ),
               ),
+              const Text(
+                'Total Product Stock',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF2e2e2e),
+                ),
+              ),
+            ],
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              child: const Icon(
+                Icons.inventory,
+                color: Color(0xFF2e2e2e),
+                size: 40,
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -481,7 +680,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         decoration: BoxDecoration(
           color: isActive ? Colors.white : const Color(0xFF2E2E2E),
           borderRadius: _getBorderRadius(index),
-          border: Border.all(color: Color(0xFFd9d9d9)),
+          border: Border.all(color: const Color(0xFFd9d9d9)),
         ),
         child: Text(
           text,

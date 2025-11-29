@@ -98,4 +98,7 @@ class AuthService {
 
   User? get currentUser => _supabase.auth.currentUser;
   bool get isLoggedIn => _supabase.auth.currentUser != null;
+
+  Stream<User?> get authStateChange =>
+      _supabase.auth.onAuthStateChange.map((event) => event.session?.user);
 }

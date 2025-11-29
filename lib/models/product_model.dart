@@ -7,7 +7,8 @@ class Produk {
   final double hargaModal;
   final double hargaJual;
   final DateTime createdAt;
-  final String? kategoriProduk;
+  final String? kategoriProdukId; // 👈 ini UUID ke tabel kategori
+  final String? kategoriNama; // 👈 tambahan: untuk tampilan (opsional)
 
   Produk({
     required this.id,
@@ -18,7 +19,8 @@ class Produk {
     required this.hargaModal,
     required this.hargaJual,
     required this.createdAt,
-    this.kategoriProduk,
+    this.kategoriProdukId, // UUID
+    this.kategoriNama, // Nama kategori (untuk UI)
   });
 
   factory Produk.fromMap(Map<String, dynamic> map) {
@@ -31,9 +33,21 @@ class Produk {
       hargaModal: (map['harga_modal'] as num?)?.toDouble() ?? 0.0,
       hargaJual: (map['harga_jual'] as num?)?.toDouble() ?? 0.0,
       createdAt: map['created_at'] != null
-          ? DateTime.parse(map['created_at'])
+          ? DateTime.parse(map['created_at'].toString())
           : DateTime.now(),
-      kategoriProduk: map['kategori_produk'],
+      kategoriProdukId: map['kategori_produk'], // UUID
+      kategoriNama: map['kategori_nama'], // Jika pakai JOIN
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'nama': nama,
+      'deskripsi': deskripsi,
+      'stok': stok,
+      'harga_modal': hargaModal,
+      'harga_jual': hargaJual,
+      'kategori_produk': kategoriProdukId, // UUID
+    };
   }
 }

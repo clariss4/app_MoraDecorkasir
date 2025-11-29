@@ -3,61 +3,70 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class DatabaseService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  // PRODUCTS CRUD
+  // 🔹 PRODUK (sesuai tabel 'produk')
+  // Di DatabaseService.dart
   Future<List<Map<String, dynamic>>> getProducts() async {
-    final response = await _supabase.from('products').select();
+    final response = await _supabase.from('produk').select();
     return response;
   }
 
   Future<void> addProduct(Map<String, dynamic> data) async {
-    await _supabase.from('products').insert(data);
+    await _supabase.from('produk').insert(data);
   }
 
-  Future<void> updateProduct(int id, Map<String, dynamic> data) async {
-    await _supabase.from('products').update(data).eq('product_id', id);
+  Future<void> updateProduct(String id, Map<String, dynamic> data) async {
+    await _supabase.from('produk').update(data).eq('id', id);
   }
 
-  Future<void> deleteProduct(int id) async {
-    await _supabase.from('products').delete().eq('product_id', id);
+  Future<void> deleteProduct(String id) async {
+    await _supabase.from('produk').delete().eq('id', id);
   }
 
-  // CUSTOMERS CRUD
+  // 🔹 KATEGORI
+  Future<List<Map<String, dynamic>>> getKategori() async {
+    final response = await _supabase
+        .from('kategori')
+        .select('id, nama, deskripsi');
+    return response;
+  }
+
+  // 🔹 PELANGGAN (sesuai tabel 'pelanggan')
   Future<List<Map<String, dynamic>>> getCustomers() async {
-    final response = await _supabase.from('customers').select();
+    final response = await _supabase.from('pelanggan').select();
     return response;
   }
 
   Future<void> addCustomer(Map<String, dynamic> data) async {
-    await _supabase.from('customers').insert(data);
+    await _supabase.from('pelanggan').insert(data);
   }
 
-  // TRANSACTIONS CRUD
+  // 🔹 PENJUALAN (sesuai tabel 'penjualan')
   Future<List<Map<String, dynamic>>> getTransactions() async {
-    final response = await _supabase.from('transactions').select();
+    final response = await _supabase.from('penjualan').select();
     return response;
   }
 
   Future<void> addTransaction(Map<String, dynamic> data) async {
-    await _supabase.from('transactions').insert(data);
+    await _supabase.from('penjualan').insert(data);
   }
 
-  // DASHBOARD STATS
+  // 🔹 DASHBOARD STATS
   Future<Map<String, dynamic>> getDashboardStats() async {
     try {
-      // Get total products
-      final productsResponse = await _supabase.from('products').select('stock');
+      // Total stok produk
+      final productsResponse = await _supabase.from('produk').select('stok');
       final totalProducts = productsResponse.fold<int>(
         0,
-        (sum, item) => sum + (item['stock'] as int? ?? 0),
+        (sum, item) => sum + (item['stok'] as int? ?? 0),
       );
 
-      // Get total customers
-      final customersResponse = await _supabase.from('customers').select('id');
+      // Total pelanggan
+      final customersResponse = await _supabase.from('pelanggan').select('id');
       final totalCustomers = customersResponse.length;
 
-      // Get recent transactions count
+      // Transaksi terbaru
       final transactionsResponse = await _supabase
-          .from('transactions')
+          .from('penjualan')
           .select('id');
       final recentTransactions = transactionsResponse.length;
 
@@ -69,6 +78,21 @@ class DatabaseService {
     } catch (e) {
       print('Error getting dashboard stats: $e');
       return {'totalProducts': 0, 'totalCustomers': 0, 'recentTransactions': 0};
+    }
+  }
+
+  // 🔹 PROFIL USER
+  Future<Map<String, dynamic>?> getUserProfile(String userId) async {
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+      return response;
+    } catch (e) {
+      print('Error getting user profile: $e');
+      return null;
     }
   }
 }
