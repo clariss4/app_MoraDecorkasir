@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/product_screen.dart';
-// import '../screens/customer_screen.dart'; // nanti buat
+import '../screens/customer_screen.dart';
 // import '../screens/sales_report_screen.dart'; // nanti buat
 // import '../screens/stock_screen.dart'; // nanti buat
 // import '../screens/cashier_screen.dart'; // nanti buat
@@ -144,17 +144,17 @@ class BaseScreen extends StatelessWidget {
               MaterialPageRoute(builder: (context) => const ProductScreen()),
             ),
           ),
-          // _buildDrawerItem(
-          //   context: context,
-          //   icon: Icons.people,
-          //   title: 'Customer',
-          //   screenName: 'Customer',
-          //   currentScreen: currentScreen,
-          //   onTap: () => Navigator.pushReplacement(
-          //     context,
-          //     MaterialPageRoute(builder: (context) => const CustomerScreen()),
-          //   ),
-          // ),
+          _buildDrawerItem(
+            context: context,
+            icon: Icons.people,
+            title: 'Customer',
+            screenName: 'Customer',
+            currentScreen: currentScreen,
+            onTap: () => Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const CustomerScreen()),
+            ),
+          ),
           // _buildDrawerItem(
           //   context: context,
           //   icon: Icons.bar_chart,

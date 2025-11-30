@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pos_kasir/screens/product_screen.dart';
+import 'package:pos_kasir/screens/customer_screen.dart';
 import 'package:pos_kasir/screens/splash_screen.dart';
 import '../providers/auth_provider.dart';
 import '../services/database_service.dart';
@@ -251,17 +252,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Customer',
                 onTap: () {
                   Navigator.pop(context);
-                  setState(() {
-                    currentScreen = 'Customer';
-                  });
-                  // TODO: Ganti dengan CustomerScreen() setelah dibuat
-                  Navigator.push(
+                  Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => Scaffold(
-                        appBar: AppBar(title: const Text('Customer')),
-                        body: const Center(child: Text('Halaman Customer')),
-                      ),
+                      builder: (context) => const CustomerScreen(),
                     ),
                   );
                 },

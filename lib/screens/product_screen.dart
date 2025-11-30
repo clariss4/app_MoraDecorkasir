@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pos_kasir/screens/customer_screen.dart';
 import 'package:pos_kasir/screens/dashboard_screen.dart';
 import 'package:pos_kasir/screens/splash_screen.dart';
 import '../providers/auth_provider.dart';
@@ -432,7 +433,12 @@ class _ProductScreenState extends State<ProductScreen> {
                       false,
                       () {
                         Navigator.pop(context);
-                        _showSnackbar('Halaman Customer belum tersedia');
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CustomerScreen(),
+                          ),
+                        );
                       },
                     ),
                     _buildDrawerItem(

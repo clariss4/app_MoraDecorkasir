@@ -40,6 +40,27 @@ class DatabaseService {
     await _supabase.from('pelanggan').insert(data);
   }
 
+  // 🔹 PELANGGAN - TAMBAHAN UNTUK UPDATE & DELETE
+  Future<void> updateCustomer(String id, Map<String, dynamic> data) async {
+    await _supabase.from('pelanggan').update(data).eq('id', id);
+  }
+
+  Future<void> deleteCustomer(String id) async {
+    await _supabase.from('pelanggan').delete().eq('id', id);
+  }
+
+  // 🔹 PELANGGAN - DENGAN SEARCH BERDASARKAN NAMA
+  Future<List<Map<String, dynamic>>> searchCustomers(String? query) async {
+    var request = _supabase.from('pelanggan').select();
+
+    if (query != null && query.trim().isNotEmpty) {
+      request = request.ilike('nama', '%$query%'); // hanya cari di kolom 'nama'
+    }
+
+    final response = await request;
+    return response.cast<Map<String, dynamic>>();
+  }
+
   // 🔹 PENJUALAN (sesuai tabel 'penjualan')
   Future<List<Map<String, dynamic>>> getTransactions() async {
     final response = await _supabase.from('penjualan').select();
@@ -94,5 +115,20 @@ class DatabaseService {
       print('Error getting user profile: $e');
       return null;
     }
+  }
+
+  // 🔹 GET TRANSAKSI BERDASARKAN PELANGGAN (SESUAI STRUKTUR DB MU)
+  Future<List<Map<String, dynamic>>> getTransactionsByCustomer(
+    String customerId,
+  ) async {
+    final response = await _supabase
+        .from('penjualan')
+        .select()
+        .eq(
+          'pelanggan_kasir_id',
+          customerId,
+        ) // ⚠️ GANTI DENGAN NAMA KOLOM YANG BENAR!
+        .order('created_at', ascending: false);
+    return response.cast<Map<String, dynamic>>();
   }
 }
