@@ -6,6 +6,7 @@ import 'package:pos_kasir/screens/splash_screen.dart';
 import '../providers/auth_provider.dart';
 import '../services/database_service.dart';
 import '../utils/user_helper.dart';
+import '../widgets/app_drawer.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -23,7 +24,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   };
   bool _isLoading = true;
 
-  String currentScreen = 'Dashboard'; // default: dashboard
+  String currentScreen = 'Dashboard'; // default screen
 
   @override
   void initState() {
@@ -56,21 +57,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> _logout(WidgetRef ref) async {
-    try {
-      final authService = ref.read(authServiceProvider);
-      await authService.signOut();
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => SplashScreen()),
-        (route) => false,
-      );
-    } catch (e) {
-      print('Logout error: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,7 +79,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      drawer: Consumer(builder: (context, ref, child) => _buildDrawer(ref)),
+      // Kurang lebih nanti prompt e iku :
+      // Buat pemanggilan navbar sama seperti DashboardScreen, yaitu memanggil AppDrawer dari app_drawer.dart
+      // 
+      drawer: AppDrawer(
+        currentScreen: currentScreen,
+        onScreenSelected: (screen) {
+          setState(() {
+            currentScreen = screen;
+          });
+        },
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -110,330 +106,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
     );
   }
-
-  Widget _buildDrawer(WidgetRef ref) {
-    final authService = ref.read(authServiceProvider);
-    final currentUser = authService.currentUser;
-
-    return Drawer(
-      child: FutureBuilder<Map<String, dynamic>?>(
-        future: _getUserProfile(currentUser?.id),
-        builder: (context, snapshot) {
-          final userProfile = snapshot.data;
-          final userRole =
-              userProfile?['role'] ?? getUserRoleFromEmail(currentUser?.email);
-
-          return ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              // Header Profil dengan layout baru
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(color: Color(0xFF6F90B9)),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Foto Profil di kiri
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.white,
-                      child: userProfile?['image_url'] != null
-                          ? ClipOval(
-                              child: Image.network(
-                                userProfile!['image_url'],
-                                width: 58,
-                                height: 58,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Icon(
-                                    Icons.person,
-                                    color: const Color(0xFF6F90B9),
-                                    size: 30,
-                                  );
-                                },
-                              ),
-                            )
-                          : Icon(
-                              Icons.person,
-                              color: const Color(0xFF6F90B9),
-                              size: 30,
-                            ),
-                    ),
-                    const SizedBox(width: 16),
-                    // Info pengguna di kanan (vertikal)
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Nama Pengguna
-                          Text(
-                            userProfile?['nama'] ??
-                                currentUser?.email?.split('@').first ??
-                                'User',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          // Email
-                          Text(
-                            userProfile?['email'] ??
-                                currentUser?.email ??
-                                'user@email.com',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          // ID
-                          Text(
-                            'ID: ${currentUser?.id?.substring(0, 8) ?? 'Unknown'}',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 11,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          // Status Pengguna
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              userRole.toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // === Menu Items Baru (DIPERBAIKI) ===
-              _buildDrawerItem(
-                icon: Icons.dashboard,
-                title: 'Dashboard',
-                onTap: () => Navigator.pop(context),
-                isActive: currentScreen == 'Dashboard',
-              ),
-              _buildDrawerItem(
-                icon: Icons.inventory_2,
-                title: 'Products',
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    currentScreen = 'Products'; // ✅ dikoreksi
-                  });
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProductScreen(),
-                    ),
-                  );
-                },
-                isActive: currentScreen == 'Products',
-              ),
-              _buildDrawerItem(
-                icon: Icons.people,
-                title: 'Customer',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CustomerScreen(),
-                    ),
-                  );
-                },
-                isActive: currentScreen == 'Customer',
-              ),
-              _buildDrawerItem(
-                icon: Icons.bar_chart,
-                title: 'Sales Report',
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    currentScreen = 'Sales Report';
-                  });
-                  // TODO: Ganti dengan SalesReportScreen()
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Scaffold(
-                        appBar: AppBar(title: const Text('Sales Report')),
-                        body: const Center(child: Text('Halaman Sales Report')),
-                      ),
-                    ),
-                  );
-                },
-                isActive: currentScreen == 'Sales Report',
-              ),
-              _buildDrawerItem(
-                icon: Icons.warehouse,
-                title: 'Stock',
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    currentScreen = 'Stock';
-                  });
-                  // TODO: Ganti dengan StockScreen()
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Scaffold(
-                        appBar: AppBar(title: const Text('Stock')),
-                        body: const Center(child: Text('Halaman Stock')),
-                      ),
-                    ),
-                  );
-                },
-                isActive: currentScreen == 'Stock',
-              ),
-              _buildDrawerItem(
-                icon: Icons.point_of_sale,
-                title: 'Cashier',
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    currentScreen = 'Cashier';
-                  });
-                  // TODO: Ganti dengan CashierScreen()
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Scaffold(
-                        appBar: AppBar(title: const Text('Cashier')),
-                        body: const Center(child: Text('Halaman Cashier')),
-                      ),
-                    ),
-                  );
-                },
-                isActive: currentScreen == 'Cashier',
-              ),
-              const SizedBox(height: 16),
-              _buildDrawerItem(
-                icon: Icons.settings,
-                title: 'Settings',
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    currentScreen = 'Settings';
-                  });
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Scaffold(
-                        appBar: AppBar(title: const Text('Settings')),
-                        body: const Center(child: Text('Halaman Settings')),
-                      ),
-                    ),
-                  );
-                },
-                isActive: currentScreen == 'Settings',
-              ),
-              _buildDrawerItem(
-                icon: Icons.logout,
-                title: 'Logout',
-                onTap: () {
-                  _logout(ref);
-                  Navigator.pop(context);
-                },
-                isLogout: true,
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  // Method untuk mengambil data profil dari Supabase
-  Future<Map<String, dynamic>?> _getUserProfile(String? userId) async {
-    if (userId == null) return null;
-
-    try {
-      final databaseService = DatabaseService();
-      final profile = await databaseService.getUserProfile(userId);
-      return profile;
-    } catch (e) {
-      print('Error getting user profile: $e');
-      return null;
-    }
-  }
-
-  // ✅ DIPERBARUI: _buildDrawerItem dengan desain baru
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    bool isLogout = false,
-    bool isActive = false,
-  }) {
-    return GestureDetector(
-      onTap: onTap, // ✅ langsung lempar ke handler luar
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: isLogout
-              ? const Color(0xFF6F90B9)
-              : isActive
-              ? const Color(0xFFE3F2FD)
-              : Colors.white,
-          border: Border(
-            bottom: BorderSide(
-              color: isLogout ? Colors.transparent : Colors.grey.shade200,
-              width: 1.0,
-            ),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: isLogout
-                  ? Colors.white
-                  : isActive
-                  ? const Color(0xFF1976D2)
-                  : const Color(0xFF6F90B9),
-              size: 24,
-            ),
-            const SizedBox(width: 16),
-            Text(
-              title,
-              style: TextStyle(
-                color: isLogout
-                    ? Colors.white
-                    : isActive
-                    ? const Color(0xFF1976D2)
-                    : const Color(0xFF2E2E2E),
-                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                fontSize: 16,
-              ),
-            ),
-            if (isLogout) const Spacer(),
-            if (isLogout) Icon(Icons.logout, color: Colors.white, size: 18),
-          ],
-        ),
-      ),
-    );
-  }
-  // ========================
-  // Bagian BODY tetap sama
-  // ========================
 
   Widget _buildRecentTransactionsTool() {
     return Container(
@@ -479,12 +151,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           const SizedBox(width: 10),
-          Container(
-            child: const Icon(
-              Icons.receipt_long_outlined,
-              color: Color(0xFF7092ba),
-              size: 60,
-            ),
+          const Icon(
+            Icons.receipt_long_outlined,
+            color: Color(0xFF7092ba),
+            size: 60,
           ),
         ],
       ),
@@ -535,17 +205,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          Positioned(
+          const Positioned(
             bottom: 0,
             right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              child: const Icon(
-                Icons.people,
-                color: Color(0xFF2e2e2e),
-                size: 40,
-              ),
-            ),
+            child: Icon(Icons.people, color: Color(0xFF2e2e2e), size: 40),
           ),
         ],
       ),
@@ -586,17 +249,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          Positioned(
+          const Positioned(
             bottom: 0,
             right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              child: const Icon(
-                Icons.inventory,
-                color: Color(0xFF2e2e2e),
-                size: 40,
-              ),
-            ),
+            child: Icon(Icons.inventory, color: Color(0xFF2e2e2e), size: 40),
           ),
         ],
       ),
@@ -611,11 +267,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
-          BoxShadow(
-            color: Color.fromARGB(255, 213, 211, 211),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
+          BoxShadow(color: Color.fromARGB(255, 213, 211, 211), blurRadius: 10, offset: Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -623,7 +275,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Text(
                 'Revenue',
@@ -691,17 +342,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   BorderRadius _getBorderRadius(int index) {
     switch (index) {
       case 0:
-        return const BorderRadius.only(
-          topLeft: Radius.circular(5),
-          bottomLeft: Radius.circular(5),
-        );
+        return const BorderRadius.only(topLeft: Radius.circular(5), bottomLeft: Radius.circular(5));
       case 1:
         return BorderRadius.zero;
       case 2:
-        return const BorderRadius.only(
-          topRight: Radius.circular(5),
-          bottomRight: Radius.circular(5),
-        );
+        return const BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5));
       default:
         return BorderRadius.zero;
     }
@@ -711,12 +356,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     List<double> data = _getChartData();
     final double maxValue = data.reduce((a, b) => a > b ? a : b);
 
-    return Container(
+    return SizedBox(
       height: 200,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Container(
+          SizedBox(
             width: 30,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -732,7 +377,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: Container(
+            child: SizedBox(
               height: 180,
               child: _selectedRevenueFilter == 'Today'
                   ? _buildBarChart(data, maxValue)
@@ -756,12 +401,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Container(
               width: 16,
               height: (data[index] / maxValue) * 160,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1976D2),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(8),
-                  topRight: Radius.circular(8),
-                ),
+              decoration: const BoxDecoration(
+                color: Color(0xFF1976D2),
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8)),
               ),
             ),
             const SizedBox(height: 4),
@@ -787,16 +429,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: labels
-                .map(
-                  (label) => Text(
-                    label,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                )
+                .map((label) => Text(
+                      label,
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w500),
+                    ))
                 .toList(),
           ),
         ),
@@ -821,20 +457,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 'Monthly':
         return ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
       case 'Today':
-        return [
-          '6',
-          '7',
-          '8',
-          '9',
-          '10',
-          '11',
-          '12',
-          '13',
-          '14',
-          '15',
-          '16',
-          '17',
-        ];
+        return ['6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17'];
       case 'Weekly':
       default:
         return ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -854,11 +477,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   TextStyle _chartLabelStyle() {
-    return TextStyle(
-      color: Colors.grey.shade600,
-      fontSize: 10,
-      fontWeight: FontWeight.w500,
-    );
+    return TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w500);
   }
 }
 
