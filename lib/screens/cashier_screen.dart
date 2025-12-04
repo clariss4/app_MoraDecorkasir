@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pos_kasir/screens/cart_screen.dart';
+import 'package:pos_kasir/screens/notifikasi_screen';
 import 'package:pos_kasir/widgets/app_drawer.dart';
 
 
@@ -25,9 +26,19 @@ class _CashierScreenState extends State<CashierScreen> {
             color: Color(0xFF2E2E2E),
           ),
         ),
-        actions: const [
-          Icon(Icons.notifications_none, size: 28),
-          SizedBox(width: 16),
+         backgroundColor: Colors.white,
+        elevation: 1,
+        iconTheme: const IconThemeData(color: Color(0xFF2E2E2E)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none, size: 28),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => NotificationScreen()),
+              );
+            },
+          ),
         ],
       ),
       drawer: AppDrawer(

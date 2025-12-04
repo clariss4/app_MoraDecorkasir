@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_kasir/screens/notifikasi_screen';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:pos_kasir/controller/customer_controller.dart';
 import '../widgets/app_drawer.dart';
@@ -215,13 +216,18 @@ class _CustomerScreenState extends State<CustomerScreen> {
             color: Color(0xFF2E2E2E),
           ),
         ),
-        backgroundColor: Colors.white,
+         backgroundColor: Colors.white,
         elevation: 1,
         iconTheme: const IconThemeData(color: Color(0xFF2E2E2E)),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, size: 28),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => NotificationScreen()),
+              );
+            },
           ),
         ],
       ),

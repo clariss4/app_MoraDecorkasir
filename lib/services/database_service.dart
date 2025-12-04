@@ -29,10 +29,12 @@ class DatabaseService {
 Future<void> updateProductStock(String productId, int newStock) async {
   await _supabase
       .from('produk')
-      .update({'stok': newStock})
+      .update({
+        'stok': newStock,
+        'updated_at': DateTime.now().toIso8601String()
+      })
       .eq('id', productId);
 }
-
 
   // =============================================================
   // 🔹 UPLOAD IMAGE (STORAGE)

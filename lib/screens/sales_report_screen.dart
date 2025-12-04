@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pos_kasir/screens/notifikasi_screen';
 import 'package:pos_kasir/screens/sales_report_detail.dart';
 import 'package:pos_kasir/widgets/app_drawer.dart';
 import '../controller/sales_report_controller.dart';
@@ -19,16 +20,16 @@ class _SalesReportPageState extends State<SalesReportPage> {
 
   bool _isLoading = true;
   SalesReportModel? _reportData;
-  
+
   List<Map<String, dynamic>> _allTransactions = [];
   List<Map<String, dynamic>> _filteredTransactions = [];
   List<Map<String, dynamic>> _customers = [];
   List<Map<String, dynamic>> _products = [];
-  
+
   String? _selectedCustomerId;
   String? _selectedProductId;
   String _selectedPeriod = 'daily';
-  
+
   DateTime? _startDate;
   DateTime? _endDate;
 
@@ -40,24 +41,24 @@ class _SalesReportPageState extends State<SalesReportPage> {
 
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final transactions = await _controller.fetchTransactions();
       final customers = await _db.getCustomers();
       final products = await _db.getProducts();
-      
+
       // Load detail untuk setiap transaksi
       for (var trx in transactions) {
         final details = await _controller.fetchDetail(trx['id']);
         trx['detail'] = details;
       }
-      
+
       setState(() {
         _allTransactions = transactions;
         _customers = customers;
         _products = products;
       });
-      
+
       await _applyFilters();
     } catch (e) {
       print('Error loading data: $e');
@@ -75,9 +76,9 @@ class _SalesReportPageState extends State<SalesReportPage> {
       pelangganId: _selectedCustomerId,
       periode: _selectedPeriod,
     );
-    
+
     final report = await _controller.hitungLaporan(filtered);
-    
+
     setState(() {
       _filteredTransactions = filtered;
       _reportData = report;
@@ -101,7 +102,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
           ? DateTimeRange(start: _startDate!, end: _endDate!)
           : null,
     );
-    
+
     if (picked != null) {
       setState(() {
         _startDate = picked.start;
@@ -114,13 +115,14 @@ class _SalesReportPageState extends State<SalesReportPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:  const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Report',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF2E2E2E),
-        ),
+        title: const Text(
+          'Report',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2E2E2E),
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 1,
@@ -128,15 +130,19 @@ class _SalesReportPageState extends State<SalesReportPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, size: 28),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => NotificationScreen()),
+              );
+            },
           ),
         ],
       ),
       drawer: AppDrawer(
-        currentScreen: 'Customer',
+        currentScreen: 'Sales Report',
         onScreenSelected: (screen) {},
       ),
-
 
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -147,34 +153,34 @@ class _SalesReportPageState extends State<SalesReportPage> {
                 children: [
                   // 3 Summary Cards
                   _buildSummaryCards(),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Filter Section
                   _buildFilterSection(),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Period Filter
                   _buildPeriodFilter(),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Date Range Display
                   _buildDateRangeDisplay(),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // View Report Button
                   _buildViewReportButton(),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Quick Summary
                   _buildQuickSummary(),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Action Buttons
                   _buildActionButtons(),
                 ],
@@ -296,7 +302,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Customer Filter
             DropdownButtonFormField<String>(
               value: _selectedCustomerId,
@@ -305,23 +311,31 @@ class _SalesReportPageState extends State<SalesReportPage> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
               ),
               items: [
-                const DropdownMenuItem(value: null, child: Text('Semua Pelanggan')),
-                ..._customers.map((c) => DropdownMenuItem(
-                      value: c['id'],
-                      child: Text(c['nama'] ?? 'Unknown'),
-                    )),
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Semua Pelanggan'),
+                ),
+                ..._customers.map(
+                  (c) => DropdownMenuItem(
+                    value: c['id'],
+                    child: Text(c['nama'] ?? 'Unknown'),
+                  ),
+                ),
               ],
               onChanged: (value) async {
                 setState(() => _selectedCustomerId = value);
                 await _applyFilters();
               },
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Product Filter
             DropdownButtonFormField<String>(
               value: _selectedProductId,
@@ -330,14 +344,22 @@ class _SalesReportPageState extends State<SalesReportPage> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
               ),
               items: [
-                const DropdownMenuItem(value: null, child: Text('Semua Produk')),
-                ..._products.map((p) => DropdownMenuItem(
-                      value: p['id'],
-                      child: Text(p['nama'] ?? 'Unknown'),
-                    )),
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Semua Produk'),
+                ),
+                ..._products.map(
+                  (p) => DropdownMenuItem(
+                    value: p['id'],
+                    child: Text(p['nama'] ?? 'Unknown'),
+                  ),
+                ),
               ],
               onChanged: (value) async {
                 setState(() => _selectedProductId = value);
@@ -423,10 +445,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
                 _startDate != null && _endDate != null
                     ? '${DateFormat('dd MMM yyyy').format(_startDate!)} - ${DateFormat('dd MMM yyyy').format(_endDate!)}'
                     : 'Pilih Rentang Tanggal',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
               ),
             ),
             Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
@@ -476,11 +495,16 @@ class _SalesReportPageState extends State<SalesReportPage> {
         customerCount[custId] = (customerCount[custId] ?? 0) + 1;
       }
     }
-    
+
     String topCustomer = 'N/A';
     if (customerCount.isNotEmpty) {
-      final topId = customerCount.entries.reduce((a, b) => a.value > b.value ? a : b).key;
-      final cust = _customers.firstWhere((c) => c['id'] == topId, orElse: () => {'nama': 'Unknown'});
+      final topId = customerCount.entries
+          .reduce((a, b) => a.value > b.value ? a : b)
+          .key;
+      final cust = _customers.firstWhere(
+        (c) => c['id'] == topId,
+        orElse: () => {'nama': 'Unknown'},
+      );
       topCustomer = cust['nama'] ?? 'Unknown';
     }
 
@@ -501,9 +525,15 @@ class _SalesReportPageState extends State<SalesReportPage> {
               ),
             ),
             const SizedBox(height: 12),
-            _buildSummaryRow('Total Transaksi', '${_filteredTransactions.length}'),
+            _buildSummaryRow(
+              'Total Transaksi',
+              '${_filteredTransactions.length}',
+            ),
             _buildSummaryRow('Pelanggan Terbanyak', topCustomer),
-            _buildSummaryRow('Total Diskon', _formatCurrency(_reportData?.totalDiskon ?? 0)),
+            _buildSummaryRow(
+              'Total Diskon',
+              _formatCurrency(_reportData?.totalDiskon ?? 0),
+            ),
           ],
         ),
       ),
@@ -517,10 +547,7 @@ class _SalesReportPageState extends State<SalesReportPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: TextStyle(color: Colors.grey[600])),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );

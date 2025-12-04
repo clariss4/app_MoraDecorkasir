@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pos_kasir/screens/Product_stock_screen.dart';
+import 'package:pos_kasir/screens/Transaction_screen.dart';
+import 'package:pos_kasir/screens/notifikasi_screen';
 import 'package:pos_kasir/screens/product_screen.dart';
 import 'package:pos_kasir/screens/customer_screen.dart';
 import 'package:pos_kasir/screens/splash_screen.dart';
+import 'package:pos_kasir/screens/total_customer_screen.dart';
 import '../providers/auth_provider.dart';
 import '../services/database_service.dart';
 import '../utils/user_helper.dart';
@@ -75,13 +79,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, size: 28),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => NotificationScreen()),
+              );
+            },
           ),
         ],
       ),
       // Kurang lebih nanti prompt e iku :
       // Buat pemanggilan navbar sama seperti DashboardScreen, yaitu memanggil AppDrawer dari app_drawer.dart
-      // 
+      //
       drawer: AppDrawer(
         currentScreen: currentScreen,
         onScreenSelected: (screen) {
@@ -108,7 +117,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildRecentTransactionsTool() {
-    return Container(
+  return InkWell(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const RecentTransactionScreen(),
+        ),
+      );
+    },
+    borderRadius: BorderRadius.circular(16),
+    child: Container(
       width: double.infinity,
       height: 140,
       padding: const EdgeInsets.all(20),
@@ -158,8 +177,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildToolsSection() {
     return Row(
@@ -171,8 +192,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildTotalCustomerTool() {
-    return Container(
+ Widget _buildTotalCustomerTool() {
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const TotalCustomerScreen(),
+        ),
+      );
+    },
+    child: Container(
       height: 160,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -212,11 +242,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildTotalProductStockTool() {
-    return Container(
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ProductStockScreen(),
+        ),
+      );
+    },
+    child: Container(
       height: 160,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -256,8 +297,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildRevenueSection() {
     return Container(
@@ -267,7 +310,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
-          BoxShadow(color: Color.fromARGB(255, 213, 211, 211), blurRadius: 10, offset: Offset(0, 4)),
+          BoxShadow(
+            color: Color.fromARGB(255, 213, 211, 211),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -342,11 +389,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   BorderRadius _getBorderRadius(int index) {
     switch (index) {
       case 0:
-        return const BorderRadius.only(topLeft: Radius.circular(5), bottomLeft: Radius.circular(5));
+        return const BorderRadius.only(
+          topLeft: Radius.circular(5),
+          bottomLeft: Radius.circular(5),
+        );
       case 1:
         return BorderRadius.zero;
       case 2:
-        return const BorderRadius.only(topRight: Radius.circular(5), bottomRight: Radius.circular(5));
+        return const BorderRadius.only(
+          topRight: Radius.circular(5),
+          bottomRight: Radius.circular(5),
+        );
       default:
         return BorderRadius.zero;
     }
@@ -403,7 +456,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: (data[index] / maxValue) * 160,
               decoration: const BoxDecoration(
                 color: Color(0xFF1976D2),
-                borderRadius: BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8)),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  topRight: Radius.circular(8),
+                ),
               ),
             ),
             const SizedBox(height: 4),
@@ -429,10 +485,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: labels
-                .map((label) => Text(
-                      label,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w500),
-                    ))
+                .map(
+                  (label) => Text(
+                    label,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         ),
@@ -457,7 +519,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 'Monthly':
         return ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
       case 'Today':
-        return ['6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17'];
+        return [
+          '6',
+          '7',
+          '8',
+          '9',
+          '10',
+          '11',
+          '12',
+          '13',
+          '14',
+          '15',
+          '16',
+          '17',
+        ];
       case 'Weekly':
       default:
         return ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -477,7 +552,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   TextStyle _chartLabelStyle() {
-    return TextStyle(color: Colors.grey.shade600, fontSize: 10, fontWeight: FontWeight.w500);
+    return TextStyle(
+      color: Colors.grey.shade600,
+      fontSize: 10,
+      fontWeight: FontWeight.w500,
+    );
   }
 }
 

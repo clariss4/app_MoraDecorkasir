@@ -8,11 +8,11 @@ import '../widgets/app_drawer.dart';
 
 final searchQueryProvider = StateProvider<String>((ref) => "");
 
-class StockScreen extends ConsumerWidget {
+class StockScreen extends ConsumerWidget {  // ✅ Harus ConsumerWidget
   const StockScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+ Widget build(BuildContext context, WidgetRef ref) {  // ✅ Harus ada WidgetRef ref
     final products = ref.watch(stockProvider);
     final query = ref.watch(searchQueryProvider);
 
