@@ -107,8 +107,7 @@ class SalesReportController {
   final details = await fetchDetail(trxId);
 
   for (var d in details) {
-    final qty = (d['qty'] as num?)?.toInt() ?? 0;   // ✔ aman untuk int
-
+    final qty = (d['qty'] as num?)?.toInt() ?? 0;  
     totalItem += qty;
 
     final modal = double.parse(d['harga_modal'].toString());
